@@ -1,3 +1,5 @@
+import 'dart:html';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -10,7 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.red,
       ),
       home: MyHomePage(title: 'Flutter Grid'),
     );
@@ -55,13 +57,15 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(children: <Widget>[
       AspectRatio(
         aspectRatio: 1.0,
-        child: GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: gridStateLength,
-            //childAspectRatio: 8.0 / 11.9
+        child: Container(
+          child: GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: gridStateLength,
+              //childAspectRatio: 8.0 / 11.9
+            ),
+            itemBuilder: _buildGridItems,
+            itemCount: gridStateLength * gridStateLength,
           ),
-          itemBuilder: _buildGridItems,
-          itemCount: gridStateLength * gridStateLength,
         ),
       ),
     ]);
@@ -76,13 +80,30 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return GestureDetector(
       onTapDown: (details) {
-        selectIItem(gridItemKey, details);
+        RenderBox _box = gridItemKey.currentContext.findRenderObject();
+        RenderBox _boxAppBar = appbarKey.currentContext.findRenderObject();
+
+        //Remove appbar height to get grid actual position
+        double gridPosition =
+            details.globalPosition.dy - _boxAppBar.size.height;
+
+        //Get item position
+        int indexX = (gridPosition / _box.size.width).floor().toInt();
+        int indexY =
+            (details.globalPosition.dx / _box.size.width).floor().toInt();
+        if (gridState[indexX][indexY] == "Y") {
+          gridState[indexX][indexY] = "";
+        } else {
+          gridState[indexX][indexY] = "Y";
+        }
+
+        setState(() {});
       },
       onVerticalDragUpdate: (details) {
-        selectIItem(gridItemKey, details);
+        selectItem(gridItemKey, details);
       },
       onHorizontalDragUpdate: (details) {
-        selectIItem(gridItemKey, details);
+        selectItem(gridItemKey, details);
       },
       child: GridTile(
         key: gridItemKey,
@@ -97,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void selectIItem(GlobalKey<State<StatefulWidget>> gridItemKey, var details) {
+  void selectItem(GlobalKey<State<StatefulWidget>> gridItemKey, var details) {
     RenderBox _box = gridItemKey.currentContext.findRenderObject();
     RenderBox _boxAppBar = appbarKey.currentContext.findRenderObject();
 
@@ -109,6 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
     int indexY = (details.globalPosition.dx / _box.size.width).floor().toInt();
 
     gridState[indexX][indexY] = "Y";
+
     setState(() {});
   }
 
@@ -120,6 +142,11 @@ class _MyHomePageState extends State<MyHomePage> {
       case 'Y':
         return Container(
           color: Colors.green,
+        );
+        break;
+      case 'N':
+        return Container(
+          color: Colors.white,
         );
         break;
       default:
