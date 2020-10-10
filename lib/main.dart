@@ -1,5 +1,3 @@
-import 'dart:html';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -29,6 +27,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   GlobalKey appbarKey = new GlobalKey();
+  GlobalKey gridKey = new GlobalKey();
 
   List<List<String>> gridState = [
     ["", "", "", "", "", "", "", "", "", ""],
@@ -58,7 +57,9 @@ class _MyHomePageState extends State<MyHomePage> {
       AspectRatio(
         aspectRatio: 1.0,
         child: Container(
+          padding: EdgeInsets.all(20.0),
           child: GridView.builder(
+            key: gridKey,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: gridStateLength,
               //childAspectRatio: 8.0 / 11.9
@@ -82,15 +83,16 @@ class _MyHomePageState extends State<MyHomePage> {
       onTapDown: (details) {
         RenderBox _box = gridItemKey.currentContext.findRenderObject();
         RenderBox _boxAppBar = appbarKey.currentContext.findRenderObject();
+        RenderBox _boxGrid = gridKey.currentContext.findRenderObject();
+        Offset position = _boxGrid.localToGlobal(Offset.zero); //this is global position
+        double gridLeft = position.dx;
+        double gridTop = position.dy;
 
-        //Remove appbar height to get grid actual position
-        double gridPosition =
-            details.globalPosition.dy - _boxAppBar.size.height;
+        double gridPosition = details.globalPosition.dy - gridTop;
 
         //Get item position
         int indexX = (gridPosition / _box.size.width).floor().toInt();
-        int indexY =
-            (details.globalPosition.dx / _box.size.width).floor().toInt();
+        int indexY = ((details.globalPosition.dx - gridLeft) / _box.size.width).floor().toInt();
         if (gridState[indexX][indexY] == "Y") {
           gridState[indexX][indexY] = "";
         } else {
@@ -120,16 +122,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void selectItem(GlobalKey<State<StatefulWidget>> gridItemKey, var details) {
     RenderBox _box = gridItemKey.currentContext.findRenderObject();
-    RenderBox _boxAppBar = appbarKey.currentContext.findRenderObject();
+    RenderBox _boxGrid = gridKey.currentContext.findRenderObject();
+    Offset position = _boxGrid.localToGlobal(Offset.zero); //this is global position
+    double gridLeft = position.dx;
+    double gridTop = position.dy;
 
-    //Remove appbar height to get grid actual position
-    double gridPosition = details.globalPosition.dy - _boxAppBar.size.height;
+    double gridPosition = details.globalPosition.dy - gridTop;
 
     //Get item position
-    int indexX = (gridPosition / _box.size.width).floor().toInt();
-    int indexY = (details.globalPosition.dx / _box.size.width).floor().toInt();
-
-    gridState[indexX][indexY] = "Y";
+    int rowIndex = (gridPosition / _box.size.width).floor().toInt();
+    int colIndex = ((details.globalPosition.dx - gridLeft) / _box.size.width).floor().toInt();
+    gridState[rowIndex][colIndex] = "Y";
 
     setState(() {});
   }
