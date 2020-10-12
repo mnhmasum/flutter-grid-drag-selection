@@ -26,21 +26,20 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  GlobalKey appbarKey = new GlobalKey();
   GlobalKey gridKey = new GlobalKey();
 
-  List<List<String>> gridState = [
-    ["", "", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", "", "", ""],
-  ];
+    List<List<String>> gridState = [
+      ["", "", "", "", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", "", "", "", ""],
+    ];
 
   @override
   void initState() {
@@ -82,7 +81,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return GestureDetector(
       onTapDown: (details) {
         RenderBox _box = gridItemKey.currentContext.findRenderObject();
-        RenderBox _boxAppBar = appbarKey.currentContext.findRenderObject();
         RenderBox _boxGrid = gridKey.currentContext.findRenderObject();
         Offset position = _boxGrid.localToGlobal(Offset.zero); //this is global position
         double gridLeft = position.dx;
@@ -121,17 +119,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void selectItem(GlobalKey<State<StatefulWidget>> gridItemKey, var details) {
-    RenderBox _box = gridItemKey.currentContext.findRenderObject();
-    RenderBox _boxGrid = gridKey.currentContext.findRenderObject();
-    Offset position = _boxGrid.localToGlobal(Offset.zero); //this is global position
+    RenderBox _boxItem = gridItemKey.currentContext.findRenderObject();
+    RenderBox _boxMainGrid = gridKey.currentContext.findRenderObject();
+    Offset position = _boxMainGrid.localToGlobal(Offset.zero); //this is global position
     double gridLeft = position.dx;
     double gridTop = position.dy;
 
     double gridPosition = details.globalPosition.dy - gridTop;
 
     //Get item position
-    int rowIndex = (gridPosition / _box.size.width).floor().toInt();
-    int colIndex = ((details.globalPosition.dx - gridLeft) / _box.size.width).floor().toInt();
+    int rowIndex = (gridPosition / _boxItem.size.width).floor().toInt();
+    int colIndex = ((details.globalPosition.dx - gridLeft) / _boxItem.size.width).floor().toInt();
     gridState[rowIndex][colIndex] = "Y";
 
     setState(() {});
@@ -161,7 +159,6 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        key: appbarKey,
         title: Text(widget.title),
       ),
       body: Container(
