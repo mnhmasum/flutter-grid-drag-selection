@@ -1,11 +1,8 @@
-import 'dart:collection';
+import 'dart:io';
 import 'dart:math';
 import 'package:dijkshortpath/coordinate.dart';
 import 'package:dijkshortpath/node.dart';
-import 'package:dijkshortpath/vertex.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 
 void main() => runApp(MyApp());
 
@@ -32,13 +29,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  bool started = false;
+  int startIndex = 11;
+  int endIndex = 76;
   GlobalKey gridKey = new GlobalKey();
-
-  //List<Vertex> visitedVertex = new List<Vertex>();
   List<Adjacent> visited = new List<Adjacent>();
-
   List<Adjacent> node = new List<Adjacent>();
+  List<int> path = new List<int>();
 
   List<List<String>> gridState = [
     ["", "", "", "", "", "", "", "", "", ""],
@@ -55,14 +51,30 @@ class _MyHomePageState extends State<MyHomePage> {
 
   int counter = 0;
 
+  List<List<int>> direction = [
+    [-1, 0],
+    [0, 1],
+    [1, 0],
+    [0, -1]
+  ];
+
   @override
   void initState() {
     super.initState();
-    adjacent(1, 1);
+    gridState[2][0] = "C";
+    gridState[2][1] = "C";
+    gridState[2][2] = "C";
+    gridState[2][3] = "C";
+    gridState[2][4] = "C";
+    setState(() {});
+    adjacent(getXY(startIndex).x, getXY(startIndex).y);
   }
 
   bool checkValid(int row, int col) {
     if (row >= 0 && row <= 9 && col >= 0 && col <= 9) {
+      if (gridState[row][col] == "C") {
+        return false;
+      }
       return true;
     } else {
       return false;
@@ -89,17 +101,52 @@ class _MyHomePageState extends State<MyHomePage> {
         Adjacent adjacent = new Adjacent();
         adjacent.visited = true;
         adjacent.vertexDistance = 0;
-
         adjacent.previousVertexIndex = index;
         adjacent.vertexIndex = index;
         node.add(adjacent);
       }
     }
 
-    //1
+    for (int i = 0; i < direction.length; i++) {
+      int x = direction[i][0];
+      int y = direction[i][1];
+
+      print("$x, $y");
+
+      if (checkValid(row + x, col + y)) {
+        if (gridState[row + x][col + y] == "P") {
+        } else if (gridState[row + x][col + y] == "Y") {
+          for (int i = 0; i < node.length; i++) {
+            if (coordToIndex(row + x, col + y) == node[i].vertexIndex) {
+              double afterIncrease = getDistance(row, col, row + 1, col + 1) +
+                  node[0].vertexDistance;
+              if (afterIncrease < node[i].vertexDistance) {
+                node[i].vertexDistance = afterIncrease;
+                node[i].previousVertexIndex = coordToIndex(row, col);
+                break;
+              }
+            }
+          }
+        } else {
+          gridState[row + x][col + y] = "Y";
+          Adjacent adjacent = new Adjacent();
+          adjacent.visited = false;
+          double dist = getDistance(row, col, row + x, col + y);
+          print("Distance $dist");
+          adjacent.vertexDistance = dist;
+
+          adjacent.previousVertexIndex = coordToIndex(row, col);
+          adjacent.vertexIndex = coordToIndex(row + x, col + y);
+          node.add(adjacent);
+        }
+      }
+    }
+
+    /*
+    //1 Top
     if (checkValid(row - 1, col)) {
-      if (gridState[row - 1][col] == "P") {} else
-      if (gridState[row - 1][col] == "Y") {
+      if (gridState[row - 1][col] == "P") {
+      } else if (gridState[row - 1][col] == "Y") {
         for (int i = 0; i < node.length; i++) {
           if (coordToIndex(row - 1, col) == node[i].vertexIndex) {
             double afterIncrease =
@@ -113,78 +160,22 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       } else {
         gridState[row - 1][col] = "Y";
-
         Adjacent adjacent = new Adjacent();
         adjacent.visited = false;
-        //sqrt(pow((row-(row - 1)), 2) + pow((col-col), 2))
         double dist = getDistance(row, col, row - 1, col);
         print("Distance $dist");
         adjacent.vertexDistance = dist;
 
         adjacent.previousVertexIndex = coordToIndex(row, col);
-        adjacent.vertexIndex = ((row - 1) * 10) + col;
+        adjacent.vertexIndex = coordToIndex(row - 1, col);
         node.add(adjacent);
       }
     }
 
-    //2
-    if (checkValid(row + 1, col)) {
-      if (gridState[row + 1][col] == "P") {} else
-      if (gridState[row + 1][col] == "Y") {
-        for (int i = 0; i < node.length; i++) {
-          if (coordToIndex(row + 1, col) == node[i].vertexIndex) {
-            double afterIncrease =
-                getDistance(row, col, row + 1, col) + node[0].vertexDistance;
-            if (afterIncrease < node[i].vertexDistance) {
-              node[i].vertexDistance = afterIncrease;
-              node[i].previousVertexIndex = coordToIndex(row, col);
-              break;
-            }
-          }
-        }
-      } else {
-        gridState[row + 1][col] = "Y";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = false;
-        adjacent.vertexDistance = getDistance(row, col, row + 1, col);
-        print(adjacent.vertexDistance);
-        adjacent.previousVertexIndex = ((row) * 10) + col;
-        adjacent.vertexIndex = ((row + 1) * 10) + col;
-        node.add(adjacent);
-      }
-    }
-
-    //3
-    if (checkValid(row, col - 1)) {
-      if (gridState[row][col - 1] == "P") {} else
-      if (gridState[row][col - 1] == "Y") {
-        for (int i = 0; i < node.length; i++) {
-          if (coordToIndex(row, col - 1) == node[i].vertexIndex) {
-            double afterIncrease =
-                getDistance(row, col, row, col - 1) + node[0].vertexDistance;
-            if (afterIncrease < node[i].vertexDistance) {
-              node[i].vertexDistance = afterIncrease;
-              node[i].previousVertexIndex = coordToIndex(row, col);
-              break;
-            }
-          }
-        }
-      } else {
-        gridState[row][col - 1] = "Y";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = false;
-        adjacent.vertexDistance = getDistance(row, col, row, col - 1);
-        print(adjacent.vertexDistance);
-        adjacent.previousVertexIndex = ((row) * 10) + col;
-        adjacent.vertexIndex = ((row) * 10) + (col - 1);
-        node.add(adjacent);
-      }
-    }
-
-    //4
+    //2 Right
     if (checkValid(row, col + 1)) {
-      if (gridState[row][col + 1] == "P") {} else
-      if (gridState[row][col + 1] == "Y") {
+      if (gridState[row][col + 1] == "P") {
+      } else if (gridState[row][col + 1] == "Y") {
         for (int i = 0; i < node.length; i++) {
           if (coordToIndex(row, col + 1) == node[i].vertexIndex) {
             double afterIncrease =
@@ -208,10 +199,64 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
 
+    //3 Bottom
+    if (checkValid(row + 1, col)) {
+      if (gridState[row + 1][col] == "P") {
+      } else if (gridState[row + 1][col] == "Y") {
+        for (int i = 0; i < node.length; i++) {
+          if (coordToIndex(row + 1, col) == node[i].vertexIndex) {
+            double afterIncrease =
+                getDistance(row, col, row + 1, col) + node[0].vertexDistance;
+            if (afterIncrease < node[i].vertexDistance) {
+              node[i].vertexDistance = afterIncrease;
+              node[i].previousVertexIndex = coordToIndex(row, col);
+              break;
+            }
+          }
+        }
+      } else {
+        gridState[row + 1][col] = "Y";
+        Adjacent adjacent = new Adjacent();
+        adjacent.visited = false;
+        adjacent.vertexDistance = getDistance(row, col, row + 1, col);
+        print(adjacent.vertexDistance);
+        adjacent.previousVertexIndex = ((row) * 10) + col;
+        adjacent.vertexIndex = ((row + 1) * 10) + col;
+        node.add(adjacent);
+      }
+    }
+
+    //4 Left
+    if (checkValid(row, col - 1)) {
+      if (gridState[row][col - 1] == "P") {
+      } else if (gridState[row][col - 1] == "Y") {
+        for (int i = 0; i < node.length; i++) {
+          if (coordToIndex(row, col - 1) == node[i].vertexIndex) {
+            double afterIncrease =
+                getDistance(row, col, row, col - 1) + node[0].vertexDistance;
+            if (afterIncrease < node[i].vertexDistance) {
+              node[i].vertexDistance = afterIncrease;
+              node[i].previousVertexIndex = coordToIndex(row, col);
+              break;
+            }
+          }
+        }
+      } else {
+        gridState[row][col - 1] = "Y";
+        Adjacent adjacent = new Adjacent();
+        adjacent.visited = false;
+        adjacent.vertexDistance = getDistance(row, col, row, col - 1);
+        print(adjacent.vertexDistance);
+        adjacent.previousVertexIndex = ((row) * 10) + col;
+        adjacent.vertexIndex = ((row) * 10) + (col - 1);
+        node.add(adjacent);
+      }
+    }*/
+
     //5 Top Right
     if (checkValid(row - 1, col + 1)) {
-      if (gridState[row - 1][col + 1] == "P") {} else
-      if (gridState[row - 1][col + 1] == "Y") {
+      if (gridState[row - 1][col + 1] == "P") {
+      } else if (gridState[row - 1][col + 1] == "Y") {
         for (int i = 0; i < node.length; i++) {
           if (coordToIndex(row - 1, col + 1) == node[i].vertexIndex) {
             double afterIncrease = getDistance(row, col, row - 1, col + 1) +
@@ -238,14 +283,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
     //6
     if (checkValid(row + 1, col + 1)) {
-      if (gridState[row + 1][col + 1] == "P") {} else
-      if (gridState[row + 1][col + 1] == "Y") {
+      if (gridState[row + 1][col + 1] == "P") {
+      } else if (gridState[row + 1][col + 1] == "Y") {
         for (int i = 0; i < node.length; i++) {
           if (coordToIndex(row + 1, col - 1) == node[i].vertexIndex) {
-            double afterIncrease = getDistance(row, col, row + 1, col + 1)
-                .floor()
-                .toDouble() +
-                node[0].vertexDistance;
+            double afterIncrease =
+                getDistance(row, col, row + 1, col + 1).floor().toDouble() +
+                    node[0].vertexDistance;
             if (afterIncrease < node[i].vertexDistance) {
               node[i].vertexDistance = afterIncrease;
               node[i].previousVertexIndex = coordToIndex(row, col);
@@ -268,14 +312,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
     //7
     if (checkValid(row - 1, col - 1)) {
-      if (gridState[row - 1][col - 1] == "P") {} else
-      if (gridState[row - 1][col - 1] == "Y") {
+      if (gridState[row - 1][col - 1] == "P") {
+      } else if (gridState[row - 1][col - 1] == "Y") {
         for (int i = 0; i < node.length; i++) {
           if (coordToIndex(row - 1, col - 1) == node[i].vertexIndex) {
-            double afterIncrease = getDistance(row, col, row - 1, col - 1)
-                .floor()
-                .toDouble() +
-                node[0].vertexDistance;
+            double afterIncrease =
+                getDistance(row, col, row - 1, col - 1).floor().toDouble() +
+                    node[0].vertexDistance;
             if (afterIncrease < node[i].vertexDistance) {
               node[i].vertexDistance = afterIncrease;
               node[i].previousVertexIndex = coordToIndex(row, col);
@@ -298,8 +341,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     //8
     if (checkValid(row + 1, col - 1)) {
-      if (gridState[row + 1][col - 1] == "P") {} else
-      if (gridState[row + 1][col - 1] == "Y") {
+      if (gridState[row + 1][col - 1] == "P") {
+      } else if (gridState[row + 1][col - 1] == "Y") {
         for (int i = 0; i < node.length; i++) {
           if (coordToIndex(row + 1, col - 1) == node[i].vertexIndex) {
             double afterIncrease = getDistance(row, col, row + 1, col - 1) +
@@ -328,46 +371,43 @@ class _MyHomePageState extends State<MyHomePage> {
       visited.add(node[0]);
       node.removeAt(0);
       node.sort((a, b) => a.vertexDistance.compareTo(b.vertexDistance));
-      for (var value in node) {
-        print(
-            "Node ${value.vertexIndex} Distance ${value
-                .vertexDistance} Prev ${value.previousVertexIndex}");
+      /*  for (var value in node) {
+        print("Node ${value.vertexIndex} Distance ${value.vertexDistance} Prev ${value.previousVertexIndex}");
       }
-
+      */
       setState(() {});
+      Coordinate startCoordinate = getXY(startIndex);
+      Coordinate endCoordinate = getXY(endIndex);
 
-      /// new Future.delayed(const Duration(seconds: 7));
-
-      if (row == 3 && col == 8) {
-        int index = (row * 10) + col;
-        if (index == 38) {
-          getPath(38);
-          path.add(38);
-          print("====Final ==== $path");
-
-          for (int p in path) {
-            gridState[getXY(p).x][getXY(p).y] = "R";
-          }
-
-          setState(() {
-
-          });
-
+      if (row == endCoordinate.x && col == endCoordinate.y) {
+        int index = coordToIndex(row, col);
+        if (index == endIndex) {
+          getPath(endIndex);
+          print("Short Path is: $path");
+          drawPath(startCoordinate, endCoordinate);
           return;
         }
       }
 
-      int index = node[0].vertexIndex;
       //if (counter < 30) {
+      int index = node[0].vertexIndex;
+      await Future.delayed(const Duration(milliseconds: 200));
       adjacent(getXY(index).x, getXY(index).y);
       //}
     }
   }
 
+  void drawPath(Coordinate startCoord, Coordinate endCoord) {
+    for (int p in path) {
+      gridState[getXY(p).x][getXY(p).y] = "R";
+    }
+    gridState[startCoord.x][startCoord.y] = "S";
+    gridState[endCoord.x][endCoord.y] = "E";
+    setState(() {});
+  }
+
   double getDistance(int row, int col, int row1, int col1) =>
       sqrt(pow((row - row1), 2) + pow((col - col1), 2));
-
-  List<int> path = new List<int>();
 
   Future<bool> getPath(int index) async {
     int prev = 1000;
@@ -407,7 +447,7 @@ class _MyHomePageState extends State<MyHomePage> {
       AspectRatio(
         aspectRatio: 1.0,
         child: Container(
-          padding: EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(16.0),
           child: GridView.builder(
             key: gridKey,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -424,8 +464,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildGridItems(BuildContext context, int index) {
     int gridStateLength = gridState.length;
-    int x,
-        y = 0;
+    int x, y = 0;
     x = (index / gridStateLength).floor();
     y = (index % gridStateLength);
     GlobalKey gridItemKey = new GlobalKey();
@@ -435,7 +474,7 @@ class _MyHomePageState extends State<MyHomePage> {
         RenderBox _box = gridItemKey.currentContext.findRenderObject();
         RenderBox _boxGrid = gridKey.currentContext.findRenderObject();
         Offset position =
-        _boxGrid.localToGlobal(Offset.zero); //this is global position
+            _boxGrid.localToGlobal(Offset.zero); //this is global position
         double gridLeft = position.dx;
         double gridTop = position.dy;
 
@@ -446,10 +485,10 @@ class _MyHomePageState extends State<MyHomePage> {
         int indexY = ((details.globalPosition.dx - gridLeft) / _box.size.width)
             .floor()
             .toInt();
-        if (gridState[indexX][indexY] == "Y") {
+        if (gridState[indexX][indexY] == "C") {
           gridState[indexX][indexY] = "";
         } else {
-          gridState[indexX][indexY] = "Y";
+          gridState[indexX][indexY] = "C";
         }
 
         setState(() {});
@@ -477,7 +516,7 @@ class _MyHomePageState extends State<MyHomePage> {
     RenderBox _boxItem = gridItemKey.currentContext.findRenderObject();
     RenderBox _boxMainGrid = gridKey.currentContext.findRenderObject();
     Offset position =
-    _boxMainGrid.localToGlobal(Offset.zero); //this is global position
+        _boxMainGrid.localToGlobal(Offset.zero); //this is global position
     double gridLeft = position.dx;
     double gridTop = position.dy;
 
@@ -486,10 +525,10 @@ class _MyHomePageState extends State<MyHomePage> {
     //Get item position
     int rowIndex = (gridPosition / _boxItem.size.width).floor().toInt();
     int colIndex =
-    ((details.globalPosition.dx - gridLeft) / _boxItem.size.width)
-        .floor()
-        .toInt();
-    gridState[rowIndex][colIndex] = "Y";
+        ((details.globalPosition.dx - gridLeft) / _boxItem.size.width)
+            .floor()
+            .toInt();
+    gridState[rowIndex][colIndex] = "C";
 
     setState(() {});
   }
@@ -501,12 +540,12 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
       case 'Y':
         return Container(
-          color: Colors.black12,
+          color: Colors.grey,
         );
         break;
       case 'S':
         return Container(
-          color: Colors.orange,
+          color: Colors.blue,
         );
         break;
       case 'E':
@@ -516,7 +555,7 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
       case 'P':
         return Container(
-          color: Colors.deepPurple,
+          color: Colors.blueGrey,
         );
         break;
       case 'N':
@@ -526,7 +565,11 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
       case 'R':
         return Container(
-          color: Colors.lightGreen,
+          color: Colors.yellow,
+        );
+      case 'C':
+        return Container(
+          color: Colors.black,
         );
         break;
       default:
