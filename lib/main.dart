@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:dijkshortpath/coordinate.dart';
 import 'package:dijkshortpath/node.dart';
+import 'package:dijkshortpath/utlity/utlity.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(MyApp());
@@ -11,11 +11,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Dijkstra Simulator',
       theme: ThemeData(
         primarySwatch: Colors.red,
       ),
-      home: MyHomePage(title: 'Flutter Grid'),
+      home: MyHomePage(title: 'Dijkstra’s Simulator - Flutter'),
     );
   }
 }
@@ -29,13 +29,26 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int startIndex = 11;
-  int endIndex = 76;
+  int _radioValue1 = 0;
+  int startIndex = 0;
+  int endIndex = 99;
+  bool pathBlinkAnimation = false;
+
   GlobalKey gridKey = new GlobalKey();
   List<Adjacent> visited = new List<Adjacent>();
   List<Adjacent> node = new List<Adjacent>();
   List<int> path = new List<int>();
 
+  List<List<int>> direction = [
+    [-1, 0],
+    [0, 1],
+    [1, 0],
+    [0, -1],
+    [-1, 1],
+    [1, 1],
+    [1, -1],
+    [-1, -1]
+  ];
   List<List<String>> gridState = [
     ["", "", "", "", "", "", "", "", "", ""],
     ["", "", "", "", "", "", "", "", "", ""],
@@ -49,395 +62,9 @@ class _MyHomePageState extends State<MyHomePage> {
     ["", "", "", "", "", "", "", "", "", ""],
   ];
 
-  int counter = 0;
-
-  List<List<int>> direction = [
-    [-1, 0],
-    [0, 1],
-    [1, 0],
-    [0, -1]
-  ];
-
   @override
   void initState() {
     super.initState();
-    gridState[2][0] = "C";
-    gridState[2][1] = "C";
-    gridState[2][2] = "C";
-    gridState[2][3] = "C";
-    gridState[2][4] = "C";
-    setState(() {});
-    adjacent(getXY(startIndex).x, getXY(startIndex).y);
-  }
-
-  bool checkValid(int row, int col) {
-    if (row >= 0 && row <= 9 && col >= 0 && col <= 9) {
-      if (gridState[row][col] == "C") {
-        return false;
-      }
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Future<void> adjacent(int row, int col) async {
-    counter++;
-    //print("row $row col $col");
-    //print("Node length ${node.length} Visited Lenght: ${visited.length}");
-
-    if (checkValid(row, col)) {
-      if (node.isNotEmpty) {
-        node[0].visited = true;
-        int index = node[0].vertexIndex;
-        row = getXY(index).x;
-        col = getXY(index).y;
-        print("current coor $row,$col");
-        gridState[row][col] = "P";
-        print(gridState);
-      } else {
-        int index = (row * 10) + col;
-        gridState[row][col] = "P";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = true;
-        adjacent.vertexDistance = 0;
-        adjacent.previousVertexIndex = index;
-        adjacent.vertexIndex = index;
-        node.add(adjacent);
-      }
-    }
-
-    for (int i = 0; i < direction.length; i++) {
-      int x = direction[i][0];
-      int y = direction[i][1];
-
-      print("$x, $y");
-
-      if (checkValid(row + x, col + y)) {
-        if (gridState[row + x][col + y] == "P") {
-        } else if (gridState[row + x][col + y] == "Y") {
-          for (int i = 0; i < node.length; i++) {
-            if (coordToIndex(row + x, col + y) == node[i].vertexIndex) {
-              double afterIncrease = getDistance(row, col, row + 1, col + 1) +
-                  node[0].vertexDistance;
-              if (afterIncrease < node[i].vertexDistance) {
-                node[i].vertexDistance = afterIncrease;
-                node[i].previousVertexIndex = coordToIndex(row, col);
-                break;
-              }
-            }
-          }
-        } else {
-          gridState[row + x][col + y] = "Y";
-          Adjacent adjacent = new Adjacent();
-          adjacent.visited = false;
-          double dist = getDistance(row, col, row + x, col + y);
-          print("Distance $dist");
-          adjacent.vertexDistance = dist;
-
-          adjacent.previousVertexIndex = coordToIndex(row, col);
-          adjacent.vertexIndex = coordToIndex(row + x, col + y);
-          node.add(adjacent);
-        }
-      }
-    }
-
-    /*
-    //1 Top
-    if (checkValid(row - 1, col)) {
-      if (gridState[row - 1][col] == "P") {
-      } else if (gridState[row - 1][col] == "Y") {
-        for (int i = 0; i < node.length; i++) {
-          if (coordToIndex(row - 1, col) == node[i].vertexIndex) {
-            double afterIncrease =
-                getDistance(row, col, row - 1, col) + node[0].vertexDistance;
-            if (afterIncrease < node[i].vertexDistance) {
-              node[i].vertexDistance = afterIncrease;
-              node[i].previousVertexIndex = coordToIndex(row, col);
-              break;
-            }
-          }
-        }
-      } else {
-        gridState[row - 1][col] = "Y";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = false;
-        double dist = getDistance(row, col, row - 1, col);
-        print("Distance $dist");
-        adjacent.vertexDistance = dist;
-
-        adjacent.previousVertexIndex = coordToIndex(row, col);
-        adjacent.vertexIndex = coordToIndex(row - 1, col);
-        node.add(adjacent);
-      }
-    }
-
-    //2 Right
-    if (checkValid(row, col + 1)) {
-      if (gridState[row][col + 1] == "P") {
-      } else if (gridState[row][col + 1] == "Y") {
-        for (int i = 0; i < node.length; i++) {
-          if (coordToIndex(row, col + 1) == node[i].vertexIndex) {
-            double afterIncrease =
-                getDistance(row, col, row, col + 1) + node[0].vertexDistance;
-            if (afterIncrease < node[i].vertexDistance) {
-              node[i].vertexDistance = afterIncrease;
-              node[i].previousVertexIndex = coordToIndex(row, col);
-              break;
-            }
-          }
-        }
-      } else {
-        gridState[row][col + 1] = "Y";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = false;
-        adjacent.vertexDistance = getDistance(row, col, row, col + 1);
-        print(adjacent.vertexDistance);
-        adjacent.previousVertexIndex = ((row) * 10) + col;
-        adjacent.vertexIndex = ((row) * 10) + (col + 1);
-        node.add(adjacent);
-      }
-    }
-
-    //3 Bottom
-    if (checkValid(row + 1, col)) {
-      if (gridState[row + 1][col] == "P") {
-      } else if (gridState[row + 1][col] == "Y") {
-        for (int i = 0; i < node.length; i++) {
-          if (coordToIndex(row + 1, col) == node[i].vertexIndex) {
-            double afterIncrease =
-                getDistance(row, col, row + 1, col) + node[0].vertexDistance;
-            if (afterIncrease < node[i].vertexDistance) {
-              node[i].vertexDistance = afterIncrease;
-              node[i].previousVertexIndex = coordToIndex(row, col);
-              break;
-            }
-          }
-        }
-      } else {
-        gridState[row + 1][col] = "Y";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = false;
-        adjacent.vertexDistance = getDistance(row, col, row + 1, col);
-        print(adjacent.vertexDistance);
-        adjacent.previousVertexIndex = ((row) * 10) + col;
-        adjacent.vertexIndex = ((row + 1) * 10) + col;
-        node.add(adjacent);
-      }
-    }
-
-    //4 Left
-    if (checkValid(row, col - 1)) {
-      if (gridState[row][col - 1] == "P") {
-      } else if (gridState[row][col - 1] == "Y") {
-        for (int i = 0; i < node.length; i++) {
-          if (coordToIndex(row, col - 1) == node[i].vertexIndex) {
-            double afterIncrease =
-                getDistance(row, col, row, col - 1) + node[0].vertexDistance;
-            if (afterIncrease < node[i].vertexDistance) {
-              node[i].vertexDistance = afterIncrease;
-              node[i].previousVertexIndex = coordToIndex(row, col);
-              break;
-            }
-          }
-        }
-      } else {
-        gridState[row][col - 1] = "Y";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = false;
-        adjacent.vertexDistance = getDistance(row, col, row, col - 1);
-        print(adjacent.vertexDistance);
-        adjacent.previousVertexIndex = ((row) * 10) + col;
-        adjacent.vertexIndex = ((row) * 10) + (col - 1);
-        node.add(adjacent);
-      }
-    }*/
-
-    //5 Top Right
-    if (checkValid(row - 1, col + 1)) {
-      if (gridState[row - 1][col + 1] == "P") {
-      } else if (gridState[row - 1][col + 1] == "Y") {
-        for (int i = 0; i < node.length; i++) {
-          if (coordToIndex(row - 1, col + 1) == node[i].vertexIndex) {
-            double afterIncrease = getDistance(row, col, row - 1, col + 1) +
-                node[0].vertexDistance;
-            if (afterIncrease < node[i].vertexDistance) {
-              node[i].vertexDistance = afterIncrease.floor().toDouble();
-              node[i].previousVertexIndex = coordToIndex(row, col);
-              break;
-            }
-          }
-        }
-      } else {
-        gridState[row - 1][col + 1] = "Y";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = false;
-        adjacent.vertexDistance =
-            getDistance(row, col, row - 1, col + 1).floor().toDouble();
-        print(adjacent.vertexDistance);
-        adjacent.previousVertexIndex = ((row) * 10) + col;
-        adjacent.vertexIndex = ((row - 1) * 10) + (col + 1);
-        node.add(adjacent);
-      }
-    }
-
-    //6
-    if (checkValid(row + 1, col + 1)) {
-      if (gridState[row + 1][col + 1] == "P") {
-      } else if (gridState[row + 1][col + 1] == "Y") {
-        for (int i = 0; i < node.length; i++) {
-          if (coordToIndex(row + 1, col - 1) == node[i].vertexIndex) {
-            double afterIncrease =
-                getDistance(row, col, row + 1, col + 1).floor().toDouble() +
-                    node[0].vertexDistance;
-            if (afterIncrease < node[i].vertexDistance) {
-              node[i].vertexDistance = afterIncrease;
-              node[i].previousVertexIndex = coordToIndex(row, col);
-              break;
-            }
-          }
-        }
-      } else {
-        gridState[row + 1][col + 1] = "Y";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = false;
-        adjacent.vertexDistance =
-            getDistance(row, col, row + 1, col + 1).floor().toDouble();
-        print(adjacent.vertexDistance);
-        adjacent.previousVertexIndex = ((row) * 10) + col;
-        adjacent.vertexIndex = ((row + 1) * 10) + (col + 1);
-        node.add(adjacent);
-      }
-    }
-
-    //7
-    if (checkValid(row - 1, col - 1)) {
-      if (gridState[row - 1][col - 1] == "P") {
-      } else if (gridState[row - 1][col - 1] == "Y") {
-        for (int i = 0; i < node.length; i++) {
-          if (coordToIndex(row - 1, col - 1) == node[i].vertexIndex) {
-            double afterIncrease =
-                getDistance(row, col, row - 1, col - 1).floor().toDouble() +
-                    node[0].vertexDistance;
-            if (afterIncrease < node[i].vertexDistance) {
-              node[i].vertexDistance = afterIncrease;
-              node[i].previousVertexIndex = coordToIndex(row, col);
-              break;
-            }
-          }
-        }
-      } else {
-        gridState[row - 1][col - 1] = "Y";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = false;
-        adjacent.vertexDistance =
-            getDistance(row, col, row - 1, col - 1).floor().toDouble();
-        print(adjacent.vertexDistance);
-        adjacent.previousVertexIndex = coordToIndex(row, col);
-        adjacent.vertexIndex = ((row - 1) * 10) + (col - 1);
-        node.add(adjacent);
-      }
-    }
-
-    //8
-    if (checkValid(row + 1, col - 1)) {
-      if (gridState[row + 1][col - 1] == "P") {
-      } else if (gridState[row + 1][col - 1] == "Y") {
-        for (int i = 0; i < node.length; i++) {
-          if (coordToIndex(row + 1, col - 1) == node[i].vertexIndex) {
-            double afterIncrease = getDistance(row, col, row + 1, col - 1) +
-                node[0].vertexDistance;
-            if (afterIncrease < node[i].vertexDistance) {
-              node[i].vertexDistance = afterIncrease.floor().toDouble();
-              node[i].previousVertexIndex = coordToIndex(row, col);
-              break;
-            }
-          }
-        }
-      } else {
-        gridState[row + 1][col - 1] = "Y";
-        Adjacent adjacent = new Adjacent();
-        adjacent.visited = false;
-        adjacent.vertexDistance =
-            getDistance(row, col, row + 1, col - 1).floor().toDouble();
-        print(adjacent.vertexDistance);
-        adjacent.previousVertexIndex = ((row) * 10) + col;
-        adjacent.vertexIndex = ((row + 1) * 10) + (col - 1);
-        node.add(adjacent);
-      }
-    }
-
-    if (node.isNotEmpty) {
-      visited.add(node[0]);
-      node.removeAt(0);
-      node.sort((a, b) => a.vertexDistance.compareTo(b.vertexDistance));
-      /*  for (var value in node) {
-        print("Node ${value.vertexIndex} Distance ${value.vertexDistance} Prev ${value.previousVertexIndex}");
-      }
-      */
-      setState(() {});
-      Coordinate startCoordinate = getXY(startIndex);
-      Coordinate endCoordinate = getXY(endIndex);
-
-      if (row == endCoordinate.x && col == endCoordinate.y) {
-        int index = coordToIndex(row, col);
-        if (index == endIndex) {
-          getPath(endIndex);
-          print("Short Path is: $path");
-          drawPath(startCoordinate, endCoordinate);
-          return;
-        }
-      }
-
-      //if (counter < 30) {
-      int index = node[0].vertexIndex;
-      await Future.delayed(const Duration(milliseconds: 200));
-      adjacent(getXY(index).x, getXY(index).y);
-      //}
-    }
-  }
-
-  void drawPath(Coordinate startCoord, Coordinate endCoord) {
-    for (int p in path) {
-      gridState[getXY(p).x][getXY(p).y] = "R";
-    }
-    gridState[startCoord.x][startCoord.y] = "S";
-    gridState[endCoord.x][endCoord.y] = "E";
-    setState(() {});
-  }
-
-  double getDistance(int row, int col, int row1, int col1) =>
-      sqrt(pow((row - row1), 2) + pow((col - col1), 2));
-
-  Future<bool> getPath(int index) async {
-    int prev = 1000;
-    for (var last in visited) {
-      print("${last.vertexIndex}  Prev ${last.previousVertexIndex}");
-      if (last.vertexIndex == index) {
-        prev = last.previousVertexIndex;
-        print(prev);
-        break;
-      }
-    }
-
-    path.add(prev);
-
-    if (prev == 11) {
-      return false;
-    }
-
-    return getPath(prev);
-  }
-
-  Coordinate getXY(int index) {
-    Coordinate c = new Coordinate();
-    c.x = (index / 10).floor();
-    c.y = index % 10;
-    return c;
-  }
-
-  int coordToIndex(int row, int col) {
-    return ((row) * 10) + col;
   }
 
   Widget _buildBody() {
@@ -471,33 +98,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return GestureDetector(
       onTapDown: (details) {
-        RenderBox _box = gridItemKey.currentContext.findRenderObject();
-        RenderBox _boxGrid = gridKey.currentContext.findRenderObject();
-        Offset position =
-            _boxGrid.localToGlobal(Offset.zero); //this is global position
-        double gridLeft = position.dx;
-        double gridTop = position.dy;
-
-        double gridPosition = details.globalPosition.dy - gridTop;
-
-        //Get item position
-        int indexX = (gridPosition / _box.size.width).floor().toInt();
-        int indexY = ((details.globalPosition.dx - gridLeft) / _box.size.width)
-            .floor()
-            .toInt();
-        if (gridState[indexX][indexY] == "C") {
-          gridState[indexX][indexY] = "";
-        } else {
-          gridState[indexX][indexY] = "C";
-        }
-
-        setState(() {});
+        selectItemOnTap(gridItemKey, details);
       },
       onVerticalDragUpdate: (details) {
-        selectItem(gridItemKey, details);
+        _selectItem(gridItemKey, details);
       },
       onHorizontalDragUpdate: (details) {
-        selectItem(gridItemKey, details);
+        _selectItem(gridItemKey, details);
       },
       child: GridTile(
         key: gridItemKey,
@@ -512,23 +119,38 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void selectItem(GlobalKey<State<StatefulWidget>> gridItemKey, var details) {
-    RenderBox _boxItem = gridItemKey.currentContext.findRenderObject();
-    RenderBox _boxMainGrid = gridKey.currentContext.findRenderObject();
+  void selectItemOnTap(
+      GlobalKey<State<StatefulWidget>> gridItemKey, TapDownDetails details) {
+    RenderBox _box = gridItemKey.currentContext.findRenderObject();
+    RenderBox _boxGrid = gridKey.currentContext.findRenderObject();
     Offset position =
-        _boxMainGrid.localToGlobal(Offset.zero); //this is global position
+        _boxGrid.localToGlobal(Offset.zero); //this is global position
     double gridLeft = position.dx;
     double gridTop = position.dy;
 
     double gridPosition = details.globalPosition.dy - gridTop;
 
     //Get item position
-    int rowIndex = (gridPosition / _boxItem.size.width).floor().toInt();
-    int colIndex =
-        ((details.globalPosition.dx - gridLeft) / _boxItem.size.width)
-            .floor()
-            .toInt();
-    gridState[rowIndex][colIndex] = "C";
+    int indexX = (gridPosition / _box.size.width).floor().toInt();
+    int indexY = ((details.globalPosition.dx - gridLeft) / _box.size.width)
+        .floor()
+        .toInt();
+
+    if (_radioValue1 == 0) {
+      _radioValue1 = 1;
+      gridState[indexX][indexY] = "S";
+      startIndex = coordinateToIndex(indexX, indexY);
+    } else if (_radioValue1 == 1) {
+      _radioValue1 = 2;
+      gridState[indexX][indexY] = "E";
+      endIndex = coordinateToIndex(indexX, indexY);
+    } else if (_radioValue1 == 2) {
+      if (gridState[indexX][indexY] == "C") {
+        gridState[indexX][indexY] = "";
+      } else {
+        gridState[indexX][indexY] = "C";
+      }
+    }
 
     setState(() {});
   }
@@ -587,6 +209,78 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           children: <Widget>[
             _buildBody(),
+            Expanded(child: SizedBox()),
+            Container(
+              padding: EdgeInsets.all(16.0),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    child: Column(
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Radio(
+                              value: 0,
+                              groupValue: _radioValue1,
+                              onChanged: _handleRadioValueChange,
+                            ),
+                            SizedBox(width: 2),
+                            Text("Select Start", style: TextStyle(fontSize: 16))
+                          ],
+                        ),
+                        Row(
+                          children: <Widget>[
+                            Radio(
+                              value: 1,
+                              groupValue: _radioValue1,
+                              onChanged: _handleRadioValueChange,
+                            ),
+                            SizedBox(width: 2),
+                            Text("Select Stop", style: TextStyle(fontSize: 16))
+                          ],
+                        ),
+                        Row(
+                          children: <Widget>[
+                            Radio(
+                              value: 2,
+                              groupValue: _radioValue1,
+                              onChanged: _handleRadioValueChange,
+                            ),
+                            SizedBox(width: 2),
+                            Text("Select Block", style: TextStyle(fontSize: 16))
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: 40,
+                  ),
+                  RaisedButton(
+                    onPressed: () {
+                      Coordinate coordinate = Utility.getXY(startIndex);
+                      _adjacent(coordinate.x, coordinate.y);
+                    },
+                    child: Text('START', style: TextStyle(fontSize: 20)),
+                    color: Colors.blue,
+                    textColor: Colors.white,
+                    elevation: 5,
+                  ),
+                  SizedBox(
+                    width: 12,
+                  ),
+                  RaisedButton(
+                    onPressed: () {
+                      reset();
+                    },
+                    child: Text('RESET', style: TextStyle(fontSize: 20)),
+                    color: Colors.blue,
+                    textColor: Colors.white,
+                    elevation: 5,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -594,7 +288,225 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  void reset() {
+    for (int i = 0; i < gridState.length; i++) {
+      for (int j = 0; j < gridState[i].length; j++) {
+        gridState[i][j] = "";
+      }
+    }
+    startIndex = 0;
+    endIndex = 0;
+    _radioValue1 = 0;
+    pathBlinkAnimation = false;
+    visited.clear();
+    node.clear();
+    path.clear();
+    setState(() {});
+  }
+
   _gridItemTapped(int x, int y) {
     print("x is $x and Y is $y");
+  }
+
+  void _handleRadioValueChange(int value) {
+    setState(() {
+      _radioValue1 = value;
+
+      switch (_radioValue1) {
+        case 0:
+          print("Selected 0");
+          break;
+        case 1:
+          print("Selected 1");
+          break;
+        case 2:
+          print("Selected 2");
+          break;
+      }
+    });
+  }
+
+  void _selectItem(GlobalKey<State<StatefulWidget>> gridItemKey, var details) {
+    RenderBox _boxItem = gridItemKey.currentContext.findRenderObject();
+    RenderBox _boxMainGrid = gridKey.currentContext.findRenderObject();
+    Offset position =
+        _boxMainGrid.localToGlobal(Offset.zero); //this is global position
+    double gridLeft = position.dx;
+    double gridTop = position.dy;
+
+    double gridPosition = details.globalPosition.dy - gridTop;
+
+    //Get item position
+    int rowIndex = (gridPosition / _boxItem.size.width).floor().toInt();
+    int colIndex =
+        ((details.globalPosition.dx - gridLeft) / _boxItem.size.width)
+            .floor()
+            .toInt();
+
+    if (_radioValue1 == 2) {
+      if (gridState[rowIndex][colIndex] != "E" ||
+          gridState[rowIndex][colIndex] != "S") {
+        gridState[rowIndex][colIndex] = "C";
+      }
+    }
+
+    setState(() {});
+  }
+
+  bool _checkValid(int row, int col) {
+    if (row >= 0 && row <= 9 && col >= 0 && col <= 9) {
+      if (gridState[row][col] == "C") {
+        return false;
+      }
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<void> _adjacent(int row, int col) async {
+    if (_checkValid(row, col)) {
+      if (node.isNotEmpty) {
+        node[0].visited = true;
+        Coordinate coordinate = Utility.getXY(node[0].vertexIndex);
+        row = coordinate.x;
+        col = coordinate.y;
+        if (gridState[row][col] != "S" && gridState[row][col] != "E") {
+          gridState[row][col] = "P";
+        }
+        print(gridState);
+      } else {
+        int index = (row * 10) + col;
+        if (gridState[row][col] != "S" && gridState[row][col] != "E") {
+          gridState[row][col] = "P";
+        }
+        Adjacent adjacent = new Adjacent();
+        adjacent.visited = true;
+        adjacent.vertexDistance = 0;
+        adjacent.previousVertexIndex = index;
+        adjacent.vertexIndex = index;
+        node.add(adjacent);
+      }
+    }
+
+    for (int i = 0; i < direction.length; i++) {
+      int x = direction[i][0];
+      int y = direction[i][1];
+
+      if (_checkValid(row + x, col + y)) {
+        if (gridState[row + x][col + y] == "P") {
+        } else if (gridState[row + x][col + y] == "Y") {
+          updateVertexDistance(row, x, col, y);
+        } else {
+          if (gridState[row + x][col + y] != "S" &&
+              gridState[row + x][col + y] != "E") {
+            gridState[row + x][col + y] = "Y";
+          }
+
+          Adjacent adjacent = new Adjacent();
+          adjacent.visited = false;
+          double dist = _getDistance(row, col, row + x, col + y);
+          adjacent.vertexDistance = dist.floor().toDouble();
+          adjacent.previousVertexIndex = coordinateToIndex(row, col);
+          adjacent.vertexIndex = coordinateToIndex(row + x, col + y);
+          node.add(adjacent);
+        }
+      }
+    }
+
+    if (node.isNotEmpty) {
+      visited.add(node[0]);
+      node.removeAt(0);
+      node.sort((a, b) => a.vertexDistance.compareTo(b.vertexDistance));
+      setState(() {});
+
+      Coordinate startCoordinate = Utility.getXY(startIndex);
+      Coordinate endCoordinate = Utility.getXY(endIndex);
+
+      if (row == endCoordinate.x && col == endCoordinate.y) {
+        int index = coordinateToIndex(row, col);
+        if (index == endIndex) {
+          _getPath(endIndex);
+          print("Short Path is: $path");
+          pathBlinkAnimation = true;
+          while (pathBlinkAnimation) {
+            _drawPath(startCoordinate, endCoordinate);
+            await Future.delayed(const Duration(milliseconds: 500));
+            _drawPathColor(startCoordinate, endCoordinate);
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
+          return;
+        }
+      }
+
+      await Future.delayed(const Duration(milliseconds: 200));
+      int index = node[0].vertexIndex;
+      Coordinate coordinate = Utility.getXY(index);
+      _adjacent(coordinate.x, coordinate.y);
+    }
+  }
+
+  void updateVertexDistance(int row, int x, int col, int y) {
+    Adjacent adjacent = node.firstWhere(
+        (n) => n.vertexIndex == coordinateToIndex(row + x, col + y));
+    double afterIncrease =
+        _getDistance(row, col, row + x, col + y).floor().toDouble() +
+            node[0].vertexDistance;
+    if (afterIncrease < adjacent.vertexDistance) {
+      adjacent.vertexDistance = afterIncrease.floor().toDouble();
+      adjacent.previousVertexIndex = coordinateToIndex(row, col);
+    }
+  }
+
+  void _drawPath(Coordinate startCoord, Coordinate endCoord) {
+    if (pathBlinkAnimation) {
+      for (int p in path) {
+        Coordinate coordinate = Utility.getXY(p);
+        gridState[coordinate.x][coordinate.y] = "R";
+      }
+      if (pathBlinkAnimation) {
+        gridState[startCoord.x][startCoord.y] = "S";
+        gridState[endCoord.x][endCoord.y] = "E";
+        setState(() {});
+      }
+    }
+  }
+
+  void _drawPathColor(Coordinate startCoord, Coordinate endCoord) {
+    if (pathBlinkAnimation) {
+      for (int p in path) {
+        Coordinate coordinate = Utility.getXY(p);
+        gridState[coordinate.x][coordinate.y] = "";
+      }
+      gridState[startCoord.x][startCoord.y] = "S";
+      gridState[endCoord.x][endCoord.y] = "E";
+      setState(() {});
+    }
+  }
+
+  double _getDistance(int row, int col, int row1, int col1) =>
+      sqrt(pow((row - row1), 2) + pow((col - col1), 2));
+
+  Future<bool> _getPath(int index) async {
+    int prev = 0;
+    for (var last in visited) {
+      if (last.vertexIndex == index) {
+        prev = last.previousVertexIndex;
+        print(prev);
+        break;
+      }
+    }
+
+    path.add(prev);
+
+    if (prev == startIndex) {
+      return false;
+    }
+
+    return _getPath(prev);
+  }
+
+  int coordinateToIndex(int row, int col) {
+    return ((row) * 10) + col;
   }
 }
