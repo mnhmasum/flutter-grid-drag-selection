@@ -194,77 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             _buildBody(),
             Expanded(child: SizedBox()),
-            Container(
-              padding: EdgeInsets.all(0.0),
-              child: Row(
-                children: <Widget>[
-                  Container(
-                    child: Column(
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Radio(
-                              value: 0,
-                              groupValue: _radioValue1,
-                              onChanged: _handleRadioValueChange,
-                            ),
-                            SizedBox(width: 2),
-                            Text("Select Start", style: TextStyle(fontSize: 16))
-                          ],
-                        ),
-                        Row(
-                          children: <Widget>[
-                            Radio(
-                              value: 1,
-                              groupValue: _radioValue1,
-                              onChanged: _handleRadioValueChange,
-                            ),
-                            SizedBox(width: 2),
-                            Text("Select Stop", style: TextStyle(fontSize: 16))
-                          ],
-                        ),
-                        Row(
-                          children: <Widget>[
-                            Radio(
-                              value: 2,
-                              groupValue: _radioValue1,
-                              onChanged: _handleRadioValueChange,
-                            ),
-                            SizedBox(width: 2),
-                            Text("Select Block", style: TextStyle(fontSize: 16))
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    width: 24,
-                  ),
-                  RaisedButton(
-                    onPressed: () {
-                      Coordinate coordinate = Utility.getXY(startIndex);
-                      _adjacent(coordinate.x, coordinate.y);
-                    },
-                    child: Text('START', style: TextStyle(fontSize: 20)),
-                    color: Colors.blue,
-                    textColor: Colors.white,
-                    elevation: 5,
-                  ),
-                  SizedBox(
-                    width: 16,
-                  ),
-                  RaisedButton(
-                    onPressed: () {
-                      reset();
-                    },
-                    child: Text('RESET', style: TextStyle(fontSize: 20)),
-                    color: Colors.blue,
-                    textColor: Colors.white,
-                    elevation: 5,
-                  ),
-                ],
-              ),
-            ),
+            _buildRadioControls(),
             SizedBox(
               height: 16,
             ),
@@ -273,6 +203,80 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  Container _buildRadioControls() {
+    return Container(
+            padding: EdgeInsets.all(0.0),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  child: Column(
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Radio(
+                            value: 0,
+                            groupValue: _radioValue1,
+                            onChanged: _handleRadioValueChange,
+                          ),
+                          SizedBox(width: 2),
+                          Text("Select Start", style: TextStyle(fontSize: 16))
+                        ],
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Radio(
+                            value: 1,
+                            groupValue: _radioValue1,
+                            onChanged: _handleRadioValueChange,
+                          ),
+                          SizedBox(width: 2),
+                          Text("Select Stop", style: TextStyle(fontSize: 16))
+                        ],
+                      ),
+                      Row(
+                        children: <Widget>[
+                          Radio(
+                            value: 2,
+                            groupValue: _radioValue1,
+                            onChanged: _handleRadioValueChange,
+                          ),
+                          SizedBox(width: 2),
+                          Text("Select Block", style: TextStyle(fontSize: 16))
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  width: 24,
+                ),
+                RaisedButton(
+                  onPressed: () {
+                    Coordinate coordinate = Utility.getXY(startIndex);
+                    _adjacent(coordinate.x, coordinate.y);
+                  },
+                  child: Text('START', style: TextStyle(fontSize: 20)),
+                  color: Colors.blue,
+                  textColor: Colors.white,
+                  elevation: 5,
+                ),
+                SizedBox(
+                  width: 16,
+                ),
+                RaisedButton(
+                  onPressed: () {
+                    reset();
+                  },
+                  child: Text('RESET', style: TextStyle(fontSize: 20)),
+                  color: Colors.blue,
+                  textColor: Colors.white,
+                  elevation: 5,
+                ),
+              ],
+            ),
+          );
   }
 
   void reset() {
@@ -410,7 +414,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
 
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 100));
       int index = node[0].vertexIndex;
       Coordinate coordinate = Utility.getXY(index);
       _adjacent(coordinate.x, coordinate.y);
