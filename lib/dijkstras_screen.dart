@@ -108,7 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
     RenderBox _box = gridItemKey.currentContext.findRenderObject();
     RenderBox _boxGrid = gridKey.currentContext.findRenderObject();
     Offset position =
-    _boxGrid.localToGlobal(Offset.zero); //this is global position
+        _boxGrid.localToGlobal(Offset.zero); //this is global position
     double gridLeft = position.dx;
     double gridTop = position.dy;
 
@@ -123,11 +123,11 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_radioValue1 == 0) {
       _radioValue1 = 1;
       gridState[indexX][indexY] = "S";
-      startIndex = coordinateToIndex(indexX, indexY);
+      startIndex = Utility.coordinateToIndex(indexX, indexY);
     } else if (_radioValue1 == 1) {
       _radioValue1 = 2;
       gridState[indexX][indexY] = "E";
-      endIndex = coordinateToIndex(indexX, indexY);
+      endIndex = Utility.coordinateToIndex(indexX, indexY);
     } else if (_radioValue1 == 2) {
       if (gridState[indexX][indexY] == "C") {
         gridState[indexX][indexY] = "";
@@ -291,7 +291,6 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
   }
 
-
   void _handleRadioValueChange(int value) {
     setState(() {
       _radioValue1 = value;
@@ -302,7 +301,7 @@ class _MyHomePageState extends State<MyHomePage> {
     RenderBox _boxItem = gridItemKey.currentContext.findRenderObject();
     RenderBox _boxMainGrid = gridKey.currentContext.findRenderObject();
     Offset position =
-    _boxMainGrid.localToGlobal(Offset.zero); //this is global position
+        _boxMainGrid.localToGlobal(Offset.zero); //this is global position
     double gridLeft = position.dx;
     double gridTop = position.dy;
 
@@ -311,9 +310,9 @@ class _MyHomePageState extends State<MyHomePage> {
     //Get item position
     int rowIndex = (gridPosition / _boxItem.size.width).floor().toInt();
     int colIndex =
-    ((details.globalPosition.dx - gridLeft) / _boxItem.size.width)
-        .floor()
-        .toInt();
+        ((details.globalPosition.dx - gridLeft) / _boxItem.size.width)
+            .floor()
+            .toInt();
 
     if (_radioValue1 == 2) {
       if (gridState[rowIndex][colIndex] != "E" ||
@@ -379,8 +378,8 @@ class _MyHomePageState extends State<MyHomePage> {
           adjacent.visited = false;
           double dist = _getDistance(row, col, row + x, col + y);
           adjacent.vertexDistance = dist.floor().toDouble();
-          adjacent.previousVertexIndex = coordinateToIndex(row, col);
-          adjacent.vertexIndex = coordinateToIndex(row + x, col + y);
+          adjacent.previousVertexIndex = Utility.coordinateToIndex(row, col);
+          adjacent.vertexIndex = Utility.coordinateToIndex(row + x, col + y);
           node.add(adjacent);
         }
       }
@@ -396,7 +395,7 @@ class _MyHomePageState extends State<MyHomePage> {
       Coordinate endCoordinate = Utility.getXY(endIndex);
 
       if (row == endCoordinate.x && col == endCoordinate.y) {
-        int index = coordinateToIndex(row, col);
+        int index = Utility.coordinateToIndex(row, col);
         if (index == endIndex) {
           _getPath(endIndex);
           print("Short Path is: $path");
@@ -420,13 +419,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void updateVertexDistance(int row, int x, int col, int y) {
     Adjacent adjacent = node.firstWhere(
-            (n) => n.vertexIndex == coordinateToIndex(row + x, col + y));
+        (n) => n.vertexIndex == Utility.coordinateToIndex(row + x, col + y));
     double afterIncrease =
         _getDistance(row, col, row + x, col + y).floor().toDouble() +
             node[0].vertexDistance;
     if (afterIncrease < adjacent.vertexDistance) {
       adjacent.vertexDistance = afterIncrease.floor().toDouble();
-      adjacent.previousVertexIndex = coordinateToIndex(row, col);
+      adjacent.previousVertexIndex = Utility.coordinateToIndex(row, col);
     }
   }
 
@@ -474,9 +473,5 @@ class _MyHomePageState extends State<MyHomePage> {
       return false;
     }
     return _getPath(prev);
-  }
-
-  int coordinateToIndex(int row, int col) {
-    return ((row) * 10) + col;
   }
 }

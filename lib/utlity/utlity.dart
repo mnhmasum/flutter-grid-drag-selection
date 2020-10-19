@@ -7,4 +7,8 @@ class Utility {
     c.y = index % 10;
     return c;
   }
+
+  static int coordinateToIndex(int row, int col) {
+    return ((row) * 10) + col;
+  }
 }
